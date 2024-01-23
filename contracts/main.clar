@@ -1,6 +1,3 @@
-(define-constant sip009-nft sip009-nft)
-(define-constant sip010-token sip010-token)
-
 ;; Import SIP traits
 (use-trait nft-trait 'SP2PABAF9FTAJYNFZH93XENAJ8FVY99RRM50D2JG9.nft-trait.nft-trait)
 (use-trait ft-trait 'SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE.sip-010-trait-ft-standard.sip010-trait)
@@ -9,9 +6,6 @@
 (define-constant contract-owner tx-sender)
 (define-constant err-expiry-in-past (err u1000))
 (define-constant err-price-zero (err u1001))
-
-
-;; Listing Errors
 (define-constant err-unknown-listing (err u2000))
 (define-constant err-unauthorised (err u2001))
 (define-constant err-listing-expired (err u2002))
@@ -22,7 +16,7 @@
 (define-constant err-asset-contract-not-whitelisted (err u2007))
 (define-constant err-payment-contract-not-whitelisted (err u2008))
 
-;; Data Storage - Listings
+;; Data storage
 (define-map listings
     uint
     {
@@ -37,7 +31,8 @@
 )
 
 (define-data-var listing-nonce uint u0)
-;; Asset Whitelist
+
+;; Asset whitelist
 (define-map whitelisted-asset-contracts principal bool)
 
 (define-read-only (is-whitelisted (asset-contract principal))
@@ -50,80 +45,77 @@
         (ok (map-set whitelisted-asset-contracts asset-contract whitelisted))
     )
 )
-;; Public Function - List NFT
-(define-public (list-nft (token-id uint) (expiry uint) (price uint) (payment-asset-contract principal))
-    (begin
-        (asserts! (is-whitelisted nft-asset-contract) err-asset-contract-not-whitelisted)
-        (asserts! (is-whitelisted payment-asset-contract) err-payment-contract-not-whitelisted)
-        (asserts! (> expiry block-height) err-expiry-in-past)
-        (asserts! (> price u0) err-price-zero)
 
-        (let ((listing-id (var-get listing-nonce)))
-            (ok (map-set listings listing-id
-                {
-                    maker: tx-sender,
-                    taker: none,
-                    token-id: token-id,
-                    nft-asset-contract: nft-asset-contract,
-                    expiry: expiry,
-                    price: price,
-                    payment-asset-contract: (some payment-asset-contract)
-                }))
-            (ok (var-set listing-nonce (+ listing-id u1)))
-            listing-id
-        )
+;; Helper functions
+(define-private (transfer-nft (token-contract <nft-trait>) (token-id uint) (sender principal) (recipient principal))
+    (contract-call? token-contract transfer token-id sender recipient)
+)
+
+(define-private (transfer-ft (token-contract <ft-trait>) (amount uint) (sender principal) (recipient principal))
+    (contract-call? token-contract transfer amount sender recipient none)
+)
+
+(define-private (assert-can-fulfil (nft-asset-contract principal) (payment-asset-contract (optional principal)) (listing {maker: principal, taker: (optional principal), token-id: uint, nft-asset-contract: principal, expiry: uint, price: uint, payment-asset-contract: (optional principal)}))
+    (begin
+        (asserts! (not (is-eq (get maker listing) tx-sender)) err-maker-taker-equal)
+        (asserts! (match (get taker listing) intended-taker (is-eq intended-taker tx-sender) true) err-unintended-taker)
+        (asserts! (< block-height (get expiry listing)) err-listing-expired)
+        (asserts! (is-eq (get nft-asset-contract listing) nft-asset-contract) err-nft-asset-mismatch)
+        (asserts! (is-eq (get payment-asset-contract listing) payment-asset-contract) err-payment-asset-mismatch)
+        (ok true)
     )
 )
-;; Public Function - Cancel Listing
+
+;; Public Function - List Asset
+(define-public (list-asset (nft-asset-contract <nft-trait>) (nft-asset {taker: (optional principal), token-id: uint, expiry: uint, price: uint, payment-asset-contract: (optional principal)}))
+    (let ((listing-id (var-get listing-nonce)))
+        (asserts! (is-whitelisted (contract-of nft-asset-contract)) err-asset-contract-not-whitelisted)
+        (asserts! (> (get expiry nft-asset) block-height) err-expiry-in-past)
+        (asserts! (> (get price nft-asset) u0) err-price-zero)
+        (asserts! (match (get payment-asset-contract nft-asset) payment-asset (is-whitelisted payment-asset) true) err-payment-contract-not-whitelisted)
+        (try! (transfer-nft nft-asset-contract (get token-id nft-asset) tx-sender (as-contract tx-sender)))
+        (map-set listings listing-id (merge {maker: tx-sender, nft-asset-contract: (contract-of nft-asset-contract)} nft-asset))
+        (var-set listing-nonce (+ listing-id u1))
+        (ok listing-id)
+    )
+)
+
 (define-public (cancel-listing (listing-id uint))
   (let ((listing (at-block listings listing-id)))
     (asserts! listing err-unknown-listing)
-    (asserts! (is-eq tx-sender (at listing maker)) err-unauthorised)
-    (asserts! (> (at listing expiry) block-height) err-listing-expired)
-    (ok (map-remove listings listing-id))))
+    (asserts! (is-eq tx-sender (get listing maker)) err-unauthorised)
+    (asserts! (> (get listing expiry) block-height) err-listing-expired)
+    (ok (map-delete listings key-tuple listings listing-id))
+  )
+)
 
-;; Public Function - Fulfill Listing
-(define-public (fulfill-listing (listing-id uint) (nft-asset-contract principal) (payment-asset-contract principal))
-    (let ((listing (map-get? listings listing-id)))
-        (asserts! listing err-unknown-listing)
+    
 
-        (asserts! (is-eq tx-sender (tup-get listing taker)) err-unintended-taker)
 
-        (asserts! (> (tup-get listing expiry) block-height) err-listing-expired)
-
-        (asserts! (is-eq nft-asset-contract (tup-get listing nft-asset-contract)) err-nft-asset-mismatch)
-
-        (asserts! (is-eq payment-asset-contract (unwrap (tup-get listing payment-asset-contract))) err-payment-asset-mismatch)
-
-        (asserts! (not (is-eq (tup-get listing maker) (tup-get listing taker))) err-maker-taker-equal)
-
-        ;; You can implement the logic for transferring NFT and payment assets here
-
-        (ok (map-remove listings listing-id))
+;; Public Function - Fulfil Listing with STX
+(define-public (fulfil-listing-stx (listing-id uint) (nft-asset-contract <nft-trait>))
+    (let (
+        (listing (unwrap! (map-get? listings listing-id) err-unknown-listing))
+        (taker tx-sender)
+        )
+        (try! (assert-can-fulfil (contract-of nft-asset-contract) none listing))
+        (try! (as-contract (transfer-nft nft-asset-contract (get token-id listing) tx-sender taker)))
+        (try! (stx-transfer? (get price listing) taker (get maker listing)))
+        (map-delete listings listing-id)
+        (ok listing-id)
     )
 )
-;; Public Function - Get Listing
-(define-read-only (get-listing (listing-id uint))
-    (map-get? listings listing-id)
-)
 
-;; Public Function - Get Whitelisted
-(define-read-only (get-whitelisted (asset-contract principal))
-    (is-whitelisted asset-contract)
-)
-;; Public Function - Get Contract Owner
-(define-read-only (get-contract-owner)
-    contract-owner
-)
-
-;; Public Function - Get Entry Points
-(define-read-only (get-entry-points)
-    {
-        list-nft: (tuple (arg uint) (arg uint) (arg uint) (arg principal)),
-        cancel-listing: (tuple (arg uint)),
-        fulfill-listing: (tuple (arg uint) (arg principal) (arg principal)),
-        get-listing: (tuple (arg uint)),
-        get-whitelisted: (tuple (arg principal)),
-        set-whitelisted: (tuple (arg principal) (arg bool))
-    }
+;; Public Function - Fulfil Listing with SIP010 Token
+(define-public (fulfil-listing-ft (listing-id uint) (nft-asset-contract <nft-trait>) (payment-asset-contract <ft-trait>))
+    (let (
+        (listing (unwrap! (map-get? listings listing-id) err-unknown-listing))
+        (taker tx-sender)
+        )
+        (try! (assert-can-fulfil (contract-of nft-asset-contract) (some (contract-of payment-asset-contract)) listing))
+        (try! (as-contract (transfer-nft nft-asset-contract (get token-id listing) tx-sender taker)))
+        (try! (transfer-ft payment-asset-contract (get price listing) taker (get maker listing)))
+        (map-delete listings listing-id)
+        (ok listing-id)
+    )
 )
