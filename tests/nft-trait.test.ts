@@ -1,21 +1,41 @@
+import { Provider, makeContract } from '@clarigen/core';
+import { testProvider, mockReadOnlyFunction, assert, expect } from '@clarigen/test';
 
-import { describe, expect, it } from "vitest";
+import { NFT_Trait } from './path-to-your-contracts'; // Replace with the correct path
 
-const accounts = simnet.getAccounts();
-const address1 = accounts.get("wallet_1")!;
+describe('NFT Trait Tests', () => {
+  let nftTrait: NFT_Trait;
 
-/*
-  The test below is an example. To learn more, read the testing documentation here:
-  https://docs.hiro.so/clarinet/feature-guides/test-contract-with-clarinet-sdk
-*/
-
-describe("example tests", () => {
-  it("ensures simnet is well initalised", () => {
-    expect(simnet.blockHeight).toBeDefined();
+  beforeEach(() => {
+    const provider: Provider = testProvider();
+    nftTrait = makeContract(provider, NFT_Trait);
   });
 
-  // it("shows an example", () => {
-  //   const { result } = simnet.callReadOnlyFn("counter", "get-counter", [], address1);
-  //   expect(result).toBeUint(0);
-  // });
+  it('should mint NFT successfully', async () => {
+    // Mock the mint function
+    const mockMint = mockReadOnlyFunction(NFT_Trait.mint, 1); // Assuming the mint function returns the token ID
+
+    // Call your trait function
+    const result = await nftTrait.mint('recipient-address');
+
+    // Check that the function was called with the correct parameters
+    expect(mockMint).toHaveBeenCalledWith('recipient-address');
+
+    // Check the result
+    expect(result).toEqual(1);
+  });
+
+  it('should get owner of NFT', async () => {
+    // Mock the get-owner function
+    const mockGetOwner = mockReadOnlyFunction(NFT_Trait.getOwner, 'owner-address');
+
+    // Call your trait function
+    const result = await nftTrait.getOwner(1); // Assuming the token ID is 1
+
+    // Check that the function was called with the correct parameters
+    expect(mockGetOwner).toHaveBeenCalledWith(1);
+
+    // Check the result
+    expect(result).toEqual('owner-address');
+  });
 });
