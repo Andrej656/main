@@ -1,21 +1,42 @@
+import { Provider, makeContracts } from '@clarigen/core';
+import { TestProvider, mockReadOnlyFunction, assert, expect } from '@clarigen/test';
 
-import { describe, expect, it } from "vitest";
+import { SIP010Token, FT_Trait } from './ft-trait.test'; // Replace with the correct path
+import { beforeEach, describe } from 'vitest';
 
-const accounts = simnet.getAccounts();
-const address1 = accounts.get("wallet_1")!;
+describe('SIP010Token Smart Contract Tests', () => {
+  let sip010Token: SIP010Token;
 
-/*
-  The test below is an example. To learn more, read the testing documentation here:
-  https://docs.hiro.so/clarinet/feature-guides/test-contract-with-clarinet-sdk
-*/
-
-describe("example tests", () => {
-  it("ensures simnet is well initalised", () => {
-    expect(simnet.blockHeight).toBeDefined();
+  beforeEach(() => {
+    const provider: Provider = testProvider();
+    sip010Token = makeContracts(provider, SIP010Token);
   });
 
-  // it("shows an example", () => {
-  //   const { result } = simnet.callReadOnlyFn("counter", "get-counter", [], address1);
-  //   expect(result).toBeUint(0);
-  // });
+  it('should transfer tokens successfully', async () => {
+    // Mock the ft-transfer? function in the FT_Trait
+    const mockTransfer = mockReadOnlyFunction(FT_Trait.transfer, true);
+
+    // Call your contract function
+    const result = await sip010Token.transfer(100, 'recipient-address', 'sender-address');
+
+    // Check that the function was called with the correct parameters
+    expect(mockTransfer).toHaveBeenCalledWith(100, 'recipient-address', 'sender-address');
+
+    // Check the result
+    assert.isTrue(result);
+  });
+
+  it('should handle transfer failure', async () => {
+    // Mock the ft-transfer? function in the FT_Trait to return false
+    const mockTransfer = mockReadOnlyFunction(FT_Trait.transfer, false);
+
+    // Call your contract function
+    const result = await sip010Token.transfer(50, 'recipient-address', 'sender-address');
+
+    // Check that the function was called with the correct parameters
+    expect(mockTransfer).toHaveBeenCalledWith(50, 'recipient-address', 'sender-address');
+
+    // Check the result
+    assert.isFalse(result);
+  });
 });
