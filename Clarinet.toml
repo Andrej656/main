@@ -20,6 +20,11 @@ path = 'contracts/nft-trait.clar'
 clarity_version = 2
 epoch = 2.4
 
+[contracts.pool]
+path = 'contracts/pool.clar'
+clarity_version = 2
+epoch = 2.4
+
 [contracts.protocol]
 path = 'contracts/protocol.clar'
 clarity_version = 2
