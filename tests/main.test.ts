@@ -40,3 +40,5 @@ describe('SIP010Token Smart Contract Tests', () => {
     assert.isFalse(result);
   });
 });
+
+export { FT_Trait };
