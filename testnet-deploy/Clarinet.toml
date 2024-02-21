@@ -1,32 +1,37 @@
 [project]
-name = 'main'
+name = 'testnet-deploy'
 description = ''
 authors = []
 telemetry = true
 cache_dir = './.cache'
 requirements = []
-[contracts.blockcityfi-logic]
-path = 'contracts/blockcityfi-logic.clar'
+[contracts.blockcity]
+path = 'contracts/blockcity.clar'
 clarity_version = 2
 epoch = 2.4
 
-[contracts.ft-trait]
-path = 'contracts/ft-trait.clar'
+[contracts.brc20]
+path = 'contracts/brc20.clar'
 clarity_version = 2
 epoch = 2.4
 
-[contracts.main]
-path = 'contracts/main.clar'
+[contracts.dashboard]
+path = 'contracts/dashboard.clar'
 clarity_version = 2
 epoch = 2.4
 
-[contracts.nft-trait]
-path = 'contracts/nft-trait.clar'
+[contracts.lending]
+path = 'contracts/lending.clar'
 clarity_version = 2
 epoch = 2.4
 
-[contracts.ordinals]
-path = 'contracts/ordinals.clar'
+[contracts.marketplace]
+path = 'contracts/marketplace.clar'
+clarity_version = 2
+epoch = 2.4
+
+[contracts.nft]
+path = 'contracts/nft.clar'
 clarity_version = 2
 epoch = 2.4
 
@@ -35,8 +40,8 @@ path = 'contracts/pool.clar'
 clarity_version = 2
 epoch = 2.4
 
-[contracts.protocol]
-path = 'contracts/protocol.clar'
+[contracts.stx20]
+path = 'contracts/stx20.clar'
 clarity_version = 2
 epoch = 2.4
 [repl.analysis]
