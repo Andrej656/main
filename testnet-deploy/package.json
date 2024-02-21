@@ -1,5 +1,6 @@
+
 {
-  "name": "main-tests",
+  "name": "testnet-deploy-tests",
   "version": "1.0.0",
   "description": "Run unit tests on this project.",
   "type": "module",
@@ -12,8 +13,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@clarigen/core": "^1.0.15",
-    "@clarigen/test": "^1.0.4",
     "@hirosystems/clarinet-sdk": "^1.0.0",
     "@stacks/transactions": "^6.9.0",
     "chokidar-cli": "^3.0.0",
