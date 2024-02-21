@@ -31,7 +31,7 @@
       (err "Token details not found")
     )
   )
-)
+
 
 (define-public (transfer-stx20 (ticker (string-ascii 8)) (amount uint) (to-principal principal))
   (let ((token-details (map-get stx20-tokens ticker)))
