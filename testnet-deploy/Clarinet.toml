@@ -6,14 +6,40 @@ telemetry = true
 cache_dir = './.cache'
 requirements = []
 
-[contracts]
-brc20 = { path = 'contracts/brc20.clar', clarity_version = 2, epoch = 2.4 }
-dashboard = { path = 'contracts/dashboard.clar', clarity_version = 2, epoch = 2.4 }
-lending = { path = 'contracts/lending.clar', clarity_version = 2, epoch = 2.4 }
-marketplace = { path = 'contracts/marketplace.clar', clarity_version = 2, epoch = 2.4 }
-nft = { path = 'contracts/nft.clar', clarity_version = 2, epoch = 2.4 }
-pool = { path = 'contracts/pool.clar', clarity_version = 2, epoch = 2.4 }
-stx20 = { path = 'contracts/stx20.clar', clarity_version = 2, epoch = 2.4 }
+[contracts.brc20]
+path = 'contracts/brc20.clar'
+clarity_version = 2
+epoch = 2.4
+
+[contracts.dashboard]
+path = 'contracts/dashboard.clar'
+clarity_version = 2
+epoch = 2.4
+
+[contracts.lending]
+path = 'contracts/lending.clar'
+clarity_version = 2
+epoch = 2.4
+
+[contracts.marketplace]
+path = 'contracts/marketplace.clar'
+clarity_version = 2
+epoch = 2.4
+
+[contracts.nft]
+path = 'contracts/nft.clar'
+clarity_version = 2
+epoch = 2.4
+
+[contracts.pool]
+path = 'contracts/pool.clar'
+clarity_version = 2
+epoch = 2.4
+
+[contracts.stx20]
+path = 'contracts/stx20.clar'
+clarity_version = 2
+epoch = 2.4
 
 [repl.analysis]
 passes = ['check_checker']
